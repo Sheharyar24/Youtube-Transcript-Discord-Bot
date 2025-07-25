@@ -2,16 +2,18 @@
 
 ## Overview
 
-This project is a Discord bot that can fetch YouTube channel statistics and (in future versions) will notify you when a new video is uploaded, providing a transcript of the video.  
-Currently, the bot supports fetching and displaying channel statistics in Discord using the YouTube Data API v3.
+This project is a Discord bot that fetches YouTube channel statistics and notifies you in Discord when a new video is uploaded from a monitored channel.  
+**Transcript fetching** will be added in a future version.
 
 ---
 
 ## Features
 
 - Fetch YouTube channel statistics (title, description, subscriber count, video count, view count) via a Discord command.
+- Add YouTube channels to a monitoring list via a Discord command.
+- Automatically checks for new uploads every 5 minutes and posts a notification embed in your Discord server.
 - Uses environment variables for API keys and Discord bot token.
-- Modular code structure for easy extension (e.g., video notifications and transcripts in future versions).
+- Modular code structure for easy extension (e.g., video transcripts).
 
 ---
 
@@ -55,12 +57,19 @@ Currently, the bot supports fetching and displaying channel statistics in Discor
     ```
     The bot will reply with an embed containing the channel's statistics.
 
+- Add a channel to monitor for new uploads:
+    ```
+    !AddChannel <channel_id>
+    ```
+    The bot will start monitoring this channel and post a notification in your server when a new video is uploaded.
+
 ---
 
 ## Roadmap
 
-- [ ] Notify when a new video is uploaded to a channel.
+- [x] Notify when a new video is uploaded to a channel.
 - [ ] Fetch and display video transcripts automatically.
+- [ ] Add more notification and configuration options.
 
 ---
 
@@ -75,4 +84,4 @@ Currently, the bot supports fetching and displaying channel statistics in Discor
 
 ## License
 
-This project is for educational and personal use.
+This project is for educational and
