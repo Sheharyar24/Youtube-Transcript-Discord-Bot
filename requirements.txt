@@ -1,0 +1,4 @@
+# pip freeze > requirements.txt | to save all packages
+discord.py
+google-api-python-client
+python-dotenv
