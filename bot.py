@@ -19,6 +19,18 @@ async def on_ready():
     channel = bot.get_channel(CHANNEL_ID)
     await channel.send("Bot is live")
 
+@bot.command(name='GetChannelStats')
+async def get_channel_stats_command(ctx, channel_id: str):
+    """Get channel statistics by channel ID."""
+    stats = get_channel_stats(channel_id)
+    stats_list = stats[0]
 
+    embed = discord.Embed(title=stats_list['title'] ,color=discord.Color.blue())
+    embed.add_field(name="Description", value=stats_list['description'], inline=False)
+    embed.add_field(name="Subscribers", value=stats_list['subscriberCount'], inline=True)
+    embed.add_field(name="Videos", value=stats_list['videoCount'], inline=True)
+    embed.add_field(name="Views", value=stats_list['viewCount'], inline=True)
+
+    await ctx.send(embed=embed)
 
 bot.run(token)
