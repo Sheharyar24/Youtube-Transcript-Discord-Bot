@@ -34,9 +34,12 @@ def get_channel_stats(channel_id):
 def get_latest_uploaded_videos(channel_id, max_results=1):
     '''Get the latest videos uploaded by a specific channel.'''
 
-    # Get the uploads playlist ID
-    channel_response = get_channel_stats(channel_id)
-    uploads_playlist_id = channel_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+    # Get the uploads playlist ID from the API response
+    request = service.channels().list(
+        part='contentDetails', id=channel_id
+    )
+    response = request.execute()
+    uploads_playlist_id = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
     # Get videos from the uploads playlist
     playlist_response = service.playlistItems().list(
@@ -56,11 +59,12 @@ def get_latest_uploaded_videos(channel_id, max_results=1):
         })
     return videos
 
-channel_id = 'UCngIhBkikUe6e7tZTjpKK7Q'
-latest_video_id = None
 
 # Uncomment the following lines to run the script continuously
 # Note: This will run indefinitely until stopped manually.
+
+# channel_id = 'UCngIhBkikUe6e7tZTjpKK7Q'
+# latest_video_id = None
 # while True:
 #     latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
 #     if latest_video:
