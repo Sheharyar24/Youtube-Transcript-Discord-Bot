@@ -4,6 +4,8 @@ from discord.ext import commands, tasks
 from discord import app_commands
 from dotenv import load_dotenv
 from youtube_functions import *
+# using flask to run the bot on a web server
+import webserver
 
 # Get environment variables
 load_dotenv()
@@ -83,4 +85,6 @@ async def my_loop():
             # Uncomment the following lines if you want to notify when no new videos are found  
                 # await channel.send(f"No new videos found for channel ID: {channel_id}")
                 # print(f"No new videos found for channel ID: {channel_id}")
+
+webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
