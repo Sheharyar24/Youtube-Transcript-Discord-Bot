@@ -17,7 +17,19 @@ def get_channel_stats(channel_id):
         part='snippet,contentDetails,statistics', id=channel_id
         )
     response = request.execute()
-    return response
+
+    #filter channel stats
+    filtered_stats = []
+    for item in response.get('items', []):
+        filtered_stats.append({
+            'channelId': item['id'],
+            'title': item['snippet']['title'],
+            'description': item['snippet']['description'],
+            'subscriberCount': item['statistics'].get('subscriberCount', 'N/A'),
+            'videoCount': item['statistics'].get('videoCount', 'N/A'),
+            'viewCount': item['statistics'].get('viewCount', 'N/A')
+        })
+    return filtered_stats
 
 def get_latest_uploaded_videos(channel_id, max_results=1):
     '''Get the latest videos uploaded by a specific channel.'''
