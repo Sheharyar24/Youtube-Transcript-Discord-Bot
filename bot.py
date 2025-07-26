@@ -5,6 +5,7 @@ from discord import app_commands
 from dotenv import load_dotenv
 from youtube_functions import *
 import webserver # using flask to run the bot on a web server
+from datetime import datetime, timezone
 
 # Get environment variables
 load_dotenv()
@@ -64,39 +65,48 @@ async def get_channel_stats_command(interaction: discord.Interaction, channel_id
 async def add_channel_command(interaction: discord.Interaction, channel_id: str):
     """Add a channel to the database with its latest video Id."""
     try:
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        # Check if the channel ID is already being monitored
+        if channel_id in Monitoring_Channels:
+            await interaction.followup.send(f"Channel {channel_id} is already being monitored.", ephemeral=True)
+            return
+
         channel = bot.get_channel(CHANNEL_ID)
         # error handling if the channel is not found
         if channel is None:
-            await interaction.response.send_message("Error: Bot cannot find the configured channel. Check channel ID and permissions.", ephemeral=True)
+            await interaction.followup.send("Error: Bot cannot find the configured channel. Check channel ID and permissions.", ephemeral=True)
             return
         
         latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
         if not latest_video:
-            await interaction.response.send_message("No videos found for this channel ID.", ephemeral=True)
+            await interaction.followup.send("No videos found for this channel ID.", ephemeral=True)
             return
 
         Monitoring_Channels[channel_id] = latest_video[0]['videoId']
 
         stats = get_channel_stats(channel_id)
         if not stats:
-            await interaction.response.send_message("Could not fetch channel stats.", ephemeral=True)
+            await interaction.followup.send("Could not fetch channel stats.", ephemeral=True)
             return
         stats = stats[0]
 
         video_id = latest_video[0]['videoId']
         published_at = latest_video[0]['publishedAt']
         title = latest_video[0]['title']
+        thumbnail = latest_video[0]['thumbnail']
 
-        embed = discord.Embed(title=title, description=f"Latest video uploaded at {published_at}", color=discord.Color.green())
-        embed.add_field(name="Channel Name", value=stats['title'], inline=False)
+        embed = discord.Embed(title=title, description=f"Latest video uploaded by {stats['title']}", color=discord.Color.green())
+        embed.set_thumbnail(url=thumbnail)
         embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+        embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
 
         video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
         await channel.send(embed=embed)
-        await interaction.response.send_message(f"Latest videos will be added to {video_channel.mention}")
+        await interaction.followup.send(f"Latest videos will be added to {video_channel.mention}")
         print(Monitoring_Channels)
     except Exception as e:
-        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        await interaction.followup.send(f"Error: {e}", ephemeral=True)
         print(f"Error in add_channel_command: {e}")
 
 @bot.tree.command(name='removechannel', description='Remove a channel from the database')
@@ -145,9 +155,10 @@ async def my_loop():
                 embed.set_thumbnail(url=thumbnail)
                 embed.add_field(name="Title", value=title, inline=False)
                 embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
-                embed.timestamp = published_at.datetime.utcnow()
+                embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
 
                 await channel.send(embed=embed)
+                print(f'new video found for {channel_name}!')
             else:
                 pass
             # Uncomment the following lines if you want to notify when no new videos are found  
@@ -155,5 +166,5 @@ async def my_loop():
                 # print(f"No new videos found for channel ID: {channel_id}")
 
 
-webserver.keep_alive()  # Start the web server to keep the bot alive
+# webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
