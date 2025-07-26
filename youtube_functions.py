@@ -1,8 +1,8 @@
 import os
-import json
-import time
+import re
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
+from youtube_transcript_api import YouTubeTranscriptApi
 
 # Load environment variables
 load_dotenv()
@@ -61,6 +61,26 @@ def get_latest_uploaded_videos(channel_id, max_results=1):
         })
     return videos
 
+def get_transcript(video_id):
+    """Get transcript and return clean text only"""
+    try:
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id)
+        
+        # Extract all text and join
+        all_text = ' '.join([snippet.text.strip() for snippet in transcript])
+        
+        # Clean up extra spaces
+        clean_text = re.sub(r'\s+', ' ', all_text)
+        
+        return clean_text.strip()
+    except Exception as e:
+        print(f"Error fetching transcript: {e}")
+        return None
+
+# Example usage:
+# transcript = get_transcript('rmeDcOKmi8Q')
+# print(transcript)
 
 # Uncomment the following lines to run the script continuously
 # Note: This will run indefinitely until stopped manually.
