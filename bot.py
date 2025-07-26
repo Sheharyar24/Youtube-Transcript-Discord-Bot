@@ -166,5 +166,5 @@ async def my_loop():
                 # print(f"No new videos found for channel ID: {channel_id}")
 
 
-# webserver.keep_alive()  # Start the web server to keep the bot alive
+webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
