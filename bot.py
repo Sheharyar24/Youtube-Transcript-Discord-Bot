@@ -86,7 +86,7 @@ async def add_channel_command(interaction: discord.Interaction, channel_id: str)
 @tasks.loop(minutes=5)
 async def my_loop():
     """Check for new videos from monitored channels."""
-    channel = bot.get_channel(CHANNEL_ID)
+    channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
 
     for channel_id in Monitoring_Channels:
         latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
