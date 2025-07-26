@@ -3,3 +3,4 @@ discord.py
 google-api-python-client
 python-dotenv
 flask # Flask is used to run the bot on a web server
+youtube-transcript-api
