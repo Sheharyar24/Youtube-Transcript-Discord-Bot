@@ -138,9 +138,14 @@ async def my_loop():
                 video_id = video['videoId']
                 published_at = video['publishedAt']
                 title = video['title']
+                thumbnail = video['thumbnail']
+                channel_name = video['channelName']
 
-                embed = discord.Embed(title=title, description=f"New video uploaded at {published_at}", color=discord.Color.green())
+                embed = discord.Embed(title=channel_name, description=f"New video uploaded!", color=discord.Color.green())
+                embed.set_thumbnail(url=thumbnail)
+                embed.add_field(name="Title", value=title, inline=False)
                 embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+                embed.timestamp = published_at.datetime.utcnow()
 
                 await channel.send(embed=embed)
             else:
