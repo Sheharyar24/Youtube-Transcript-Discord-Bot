@@ -55,7 +55,9 @@ def get_latest_uploaded_videos(channel_id, max_results=1):
         videos.append({
             'videoId': snippet['resourceId']['videoId'],
             'publishedAt': snippet['publishedAt'],
-            'title': snippet['title']
+            'title': snippet['title'],
+            'thumbnail': snippet['thumbnails']['high']['url'],
+            'channelName': snippet['channelTitle'],
         })
     return videos
 
