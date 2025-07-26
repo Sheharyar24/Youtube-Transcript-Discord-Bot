@@ -99,6 +99,7 @@ async def add_channel_command(interaction: discord.Interaction, channel_id: str)
         embed = discord.Embed(title=title, description=f"Latest video uploaded by {stats['title']}", color=discord.Color.green())
         embed.set_thumbnail(url=thumbnail)
         embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+        embed.add_field(name="Video ID", value=video_id, inline=False)
         embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
 
         video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
@@ -180,6 +181,7 @@ async def my_loop():
                 embed.set_thumbnail(url=thumbnail)
                 embed.add_field(name="Title", value=title, inline=False)
                 embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+                embed.set_footer(text=f"Video ID: {video_id}")
                 embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
 
                 await channel.send(embed=embed)
