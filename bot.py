@@ -50,6 +50,11 @@ async def get_channel_stats_command(interaction: discord.Interaction, channel_id
     embed.add_field(name="Views", value=stats_list['viewCount'], inline=True)
 
     stats_channel = bot.get_channel(STATS_CHANNEL_ID)
+    # error handling if the channel is not found
+    if stats_channel is None:
+        await interaction.response.send_message("Error: Bot cannot find the configured channel. Check channel ID and permissions.", ephemeral=True)
+        return
+
     await stats_channel.send(embed=embed)
     await interaction.response.send_message(f"📊 Channel stats sent to {stats_channel.mention}")
 
@@ -58,29 +63,41 @@ async def get_channel_stats_command(interaction: discord.Interaction, channel_id
 @app_commands.describe(channel_id="YouTube channel ID")
 async def add_channel_command(interaction: discord.Interaction, channel_id: str):
     """Add a channel to the database with its latest video Id."""
-    channel = bot.get_channel(CHANNEL_ID)
-    
-    # When adding a channel, we also fetch the latest video ID
-    latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
-    Monitoring_Channels[channel_id]=latest_video[0]['videoId']
+    try:
+        channel = bot.get_channel(CHANNEL_ID)
+        # error handling if the channel is not found
+        if channel is None:
+            await interaction.response.send_message("Error: Bot cannot find the configured channel. Check channel ID and permissions.", ephemeral=True)
+            return
+        
+        latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
+        if not latest_video:
+            await interaction.response.send_message("No videos found for this channel ID.", ephemeral=True)
+            return
 
-    # Get the channel stats
-    stats = get_channel_stats(channel_id)
-    stats = stats[0]
+        Monitoring_Channels[channel_id] = latest_video[0]['videoId']
 
-    # Get the latest video details
-    video_id = latest_video[0]['videoId']
-    published_at = latest_video[0]['publishedAt']
-    title = latest_video[0]['title']
+        stats = get_channel_stats(channel_id)
+        if not stats:
+            await interaction.response.send_message("Could not fetch channel stats.", ephemeral=True)
+            return
+        stats = stats[0]
 
-    embed = discord.Embed(title=title, description=f"Latest video uploaded at {published_at}", color=discord.Color.green())
-    embed.add_field(name="Channel Name", value=stats['title'], inline=False)
-    embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
-    
-    video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
-    await channel.send(embed=embed)
-    await interaction.response.send_message(f"{stats['title']} Channel added to the database. \nLatest videos will be added to {video_channel.mention}")
-    print(Monitoring_Channels)
+        video_id = latest_video[0]['videoId']
+        published_at = latest_video[0]['publishedAt']
+        title = latest_video[0]['title']
+
+        embed = discord.Embed(title=title, description=f"Latest video uploaded at {published_at}", color=discord.Color.green())
+        embed.add_field(name="Channel Name", value=stats['title'], inline=False)
+        embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+
+        video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
+        await channel.send(embed=embed)
+        await interaction.response.send_message(f"{stats['title']} Channel added to the database. \nLatest videos will be added to {video_channel.mention}")
+        print(Monitoring_Channels)
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        print(f"Error in add_channel_command: {e}")
 
 
 @tasks.loop(minutes=5)
