@@ -103,7 +103,7 @@ async def add_channel_command(interaction: discord.Interaction, channel_id: str)
 
         video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
         await channel.send(embed=embed)
-        await interaction.followup.send(f"Latest videos will be added to {video_channel.mention}")
+        await interaction.followup.send(f"Latest videos will be added to {video_channel.mention}", ephemeral=True)
         print(Monitoring_Channels)
     except Exception as e:
         await interaction.followup.send(f"Error: {e}", ephemeral=True)
@@ -133,6 +133,31 @@ async def list_channels_command(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
+@bot.tree.command(name='transcript', description='Get the transcript of a YouTube video by video ID')
+@app_commands.describe(video_id="YouTube video ID")
+async def transcript_command(interaction: discord.Interaction, video_id: str):
+    """Fetch and send the transcript of a YouTube video."""
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    transcript_text = get_transcript(video_id)
+    if not transcript_text:
+        await interaction.followup.send("Transcript not available for this video.", ephemeral=True)
+        return
+
+    # Discord message limit is 2000 characters
+    if len(transcript_text) < 1900:
+        await interaction.followup.send(f"Transcript for `{video_id}`:\n```{transcript_text}```", ephemeral=True)
+    else:
+        # If too long, send as a text file
+        filename = f"transcript_{video_id}.txt"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(transcript_text)
+        await interaction.followup.send(
+            content=f"Transcript for `{video_id}` is too long, sending as a file.",
+            file=discord.File(filename),
+            ephemeral=True
+        )
+        os.remove(filename)
 
 @tasks.loop(minutes=5)
 async def my_loop():
