@@ -93,11 +93,35 @@ async def add_channel_command(interaction: discord.Interaction, channel_id: str)
 
         video_channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
         await channel.send(embed=embed)
-        await interaction.response.send_message(f"{stats['title']} Channel added to the database. \nLatest videos will be added to {video_channel.mention}")
+        await interaction.response.send_message(f"Latest videos will be added to {video_channel.mention}")
         print(Monitoring_Channels)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}", ephemeral=True)
         print(f"Error in add_channel_command: {e}")
+
+@bot.tree.command(name='removechannel', description='Remove a channel from the database')
+@app_commands.describe(channel_id="YouTube channel ID") 
+async def remove_channel_command(interaction: discord.Interaction, channel_id: str):
+    """Remove a channel from the database."""
+    if channel_id in Monitoring_Channels:
+        del Monitoring_Channels[channel_id]
+        await interaction.response.send_message(f"Channel {channel_id} removed from monitoring.", ephemeral=True)
+    else:
+        await interaction.response.send_message(f"Channel {channel_id} not found in monitoring list.", ephemeral=True)
+
+
+@bot.tree.command(name='listchannels', description='List all monitored channels')
+async def list_channels_command(interaction: discord.Interaction):
+    """List all monitored channels."""
+    if not Monitoring_Channels:
+        await interaction.response.send_message("No channels are currently being monitored.", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="Monitored Channels", color=discord.Color.blue())
+    for channel_id, video_id in Monitoring_Channels.items():
+        embed.add_field(name=channel_id, value=f"Latest Video ID: {video_id}", inline=False)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @tasks.loop(minutes=5)
