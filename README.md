@@ -89,4 +89,4 @@ The bot will automatically check for new uploads every 5 minutes and post a noti
 
 ## License
 
-This project is for
+This project is for educational and personal use.
