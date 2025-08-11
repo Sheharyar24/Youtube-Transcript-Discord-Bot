@@ -164,6 +164,7 @@ async def transcript_command(interaction: discord.Interaction, video_id: str):
 async def my_loop():
     """Check for new videos from monitored channels."""
     channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
+    bot_logs_channel = bot.get_channel(CHANNEL_ID)
 
     for channel_id in Monitoring_Channels:
         latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
@@ -187,11 +188,16 @@ async def my_loop():
                 await channel.send(embed=embed)
                 print(f'new video found for {channel_name}!')
             else:
-                pass
-            # Uncomment the following lines if you want to notify when no new videos are found  
-                # await channel.send(f"No new videos found for channel ID: {channel_id}")
+                # send logs to channel
+                await bot_logs_channel.send(f"No new videos found for channel ID: {channel_id}")
                 # print(f"No new videos found for channel ID: {channel_id}")
 
+@my_loop.error
+async def my_loop_error(error):
+    print(f"💥 Loop crashed with: {error}. Restarting...")
+    channel = bot.get_channel(CHANNEL_ID)
+    await channel.send(f"Bot Restarting! Please add channel again")
+    my_loop.restart()
 
 webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
