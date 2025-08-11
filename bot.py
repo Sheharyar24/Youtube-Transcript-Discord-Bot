@@ -189,8 +189,8 @@ async def my_loop():
                 print(f'new video found for {channel_name}!')
             else:
                 # send logs to channel
-                await bot_logs_channel.send(f"No new videos found for channel ID: {channel_id}")
-                # print(f"No new videos found for channel ID: {channel_id}")
+                # await bot_logs_channel.send(f"No new videos found for channel ID: {channel_id}")
+                print(f"No new videos found for channel ID: {channel_id}")
 
 @my_loop.error
 async def my_loop_error(error):
