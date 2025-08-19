@@ -163,41 +163,106 @@ async def transcript_command(interaction: discord.Interaction, video_id: str):
 @tasks.loop(minutes=5)
 async def my_loop():
     """Check for new videos from monitored channels."""
-    channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
-    bot_logs_channel = bot.get_channel(CHANNEL_ID)
+    try:
+        print(f"🔍 Checking {len(Monitoring_Channels)} channels for new videos...")
+        
+        if not Monitoring_Channels:
+            print("No channels to monitor")
+            return
+            
+        channel = bot.get_channel(LATEST_VIDEO_CHANNEL_ID)
+        if not channel:
+            print(f"Warning: Could not find video channel with ID {LATEST_VIDEO_CHANNEL_ID}")
+            return
 
-    for channel_id in Monitoring_Channels:
-        latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
-        if latest_video:
-            video = latest_video[0]
-            if video['videoId'] != Monitoring_Channels[channel_id]:
-                Monitoring_Channels[channel_id] = video['videoId']
-                video_id = video['videoId']
-                published_at = video['publishedAt']
-                title = video['title']
-                thumbnail = video['thumbnail']
-                channel_name = video['channelName']
+        for channel_id in list(Monitoring_Channels.keys()):  # Create a copy to avoid modification during iteration
+            try:
+                latest_video = get_latest_uploaded_videos(channel_id, max_results=1)
+                if not latest_video:
+                    print(f"No videos found for channel {channel_id}")
+                    continue
+                    
+                video = latest_video[0]
+                if video['videoId'] != Monitoring_Channels[channel_id]:
+                    print(f"🎉 New video found for {video.get('channelName', channel_id)}!")
+                    
+                    # Update the stored video ID
+                    Monitoring_Channels[channel_id] = video['videoId']
+                    
+                    # Create and send embed
+                    video_id = video['videoId']
+                    published_at = video['publishedAt']
+                    title = video['title']
+                    thumbnail = video['thumbnail']
+                    channel_name = video['channelName']
 
-                embed = discord.Embed(title=channel_name, description=f"New video uploaded!", color=discord.Color.green())
-                embed.set_thumbnail(url=thumbnail)
-                embed.add_field(name="Title", value=title, inline=False)
-                embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
-                embed.set_footer(text=f"Video ID: {video_id}")
-                embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+                    embed = discord.Embed(
+                        title=f"🎬 {channel_name}", 
+                        description="New video uploaded!", 
+                        color=discord.Color.green()
+                    )
+                    embed.set_thumbnail(url=thumbnail)
+                    embed.add_field(name="Title", value=title, inline=False)
+                    embed.add_field(name="Video Link", value=f"https://www.youtube.com/watch?v={video_id}", inline=False)
+                    embed.set_footer(text=f"Video ID: {video_id}")
+                    embed.timestamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
 
-                await channel.send(embed=embed)
-                print(f'new video found for {channel_name}!')
-            else:
-                # send logs to channel
-                # await bot_logs_channel.send(f"No new videos found for channel ID: {channel_id}")
-                print(f"No new videos found for channel ID: {channel_id}")
+                    await channel.send(embed=embed)
+                else:
+                    print(f"No new videos for {channel_id}")
+                    
+            except Exception as e:
+                print(f"Error checking channel {channel_id}: {e}")
+                continue  # Continue with other channels even if one fails
+                
+    except Exception as e:
+        print(f"Critical error in monitoring loop: {e}")
+        print(traceback.format_exc())
+        raise  # Re-raise to trigger the error handler
+
 
 @my_loop.error
 async def my_loop_error(error):
-    print(f"💥 Loop crashed with: {error}. Restarting...")
-    channel = bot.get_channel(CHANNEL_ID)
-    await channel.send(f"Bot Restarting! Please add channel again")
-    my_loop.restart()
+    print(f"💥 Loop crashed with error: {error}")
+    print(f"Full traceback: {traceback.format_exc()}")
+    
+    # Try to send error message to channel, but don't crash if it fails
+    try:
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel and bot.is_ready():
+            await channel.send(f"⚠️ **Monitoring loop crashed!**\n```{str(error)[:1000]}```\nAttempting to restart...")
+    except Exception as e:
+        print(f"Failed to send error message to Discord: {e}")
+    
+    # Wait a bit before restarting to avoid rapid restart loops
+    await asyncio.sleep(30)
+    
+    # Try to restart the loop
+    try:
+        if not my_loop.is_running():
+            my_loop.start()
+            print("✅ Loop restarted successfully")
+            
+            # Try to send success message
+            try:
+                channel = bot.get_channel(CHANNEL_ID)
+                if channel and bot.is_ready():
+                    await channel.send("✅ **Monitoring loop restarted successfully!**")
+            except:
+                pass  # Don't crash if we can't send the message
+        else:
+            print("Loop is already running, skipping restart")
+    except Exception as restart_error:
+        print(f"Failed to restart loop: {restart_error}")
+        # If restart fails, try a more aggressive restart after another delay
+        await asyncio.sleep(60)
+        try:
+            my_loop.restart()
+            print("✅ Loop force-restarted")
+        except Exception as final_error:
+            print(f"💀 Final restart attempt failed: {final_error}")
+
+
 
 webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
