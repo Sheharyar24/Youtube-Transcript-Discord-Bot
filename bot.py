@@ -262,7 +262,34 @@ async def my_loop_error(error):
         except Exception as final_error:
             print(f"💀 Final restart attempt failed: {final_error}")
 
+# Add a manual restart command for debugging
+@bot.tree.command(name='restartloop', description='Manually restart the monitoring loop (Admin only)')
+async def restart_loop_command(interaction: discord.Interaction):
+    """Manually restart the monitoring loop."""
+    try:
+        if my_loop.is_running():
+            my_loop.cancel()
+            await asyncio.sleep(2)
+        
+        my_loop.start()
+        await interaction.response.send_message("✅ Monitoring loop restarted manually!", ephemeral=True)
+        print("Loop restarted manually via command")
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Failed to restart loop: {e}", ephemeral=True)
+        print(f"Failed to restart loop manually: {e}")
 
+@bot.tree.command(name='status', description='Check bot and loop status')
+async def status_command(interaction: discord.Interaction):
+    """Check the status of the bot and monitoring loop."""
+    loop_status = "🟢 Running" if my_loop.is_running() else "🔴 Stopped"
+    channels_count = len(Monitoring_Channels)
+    
+    embed = discord.Embed(title="🤖 Bot Status", color=discord.Color.blue())
+    embed.add_field(name="Monitoring Loop", value=loop_status, inline=True)
+    embed.add_field(name="Monitored Channels", value=str(channels_count), inline=True)
+    embed.add_field(name="Bot Latency", value=f"{round(bot.latency * 1000)}ms", inline=True)
+    
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 webserver.keep_alive()  # Start the web server to keep the bot alive
 bot.run(token)
